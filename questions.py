@@ -23,25 +23,25 @@ names a target of "4 of 5", and four of three is not a thing.
 
 QUESTIONS = [
     {
-        "question": "Is the housing lottery completely random?",
-        "expects": "credit hours",
+        "question": "What happens if I drop a course after week two?",
+        "expects": "W"
     },
     {
-        "question": "What material are the CS 210 exams based on?",
-        "expects": "lecture material",
+        "question": "When should students book their adviser before registration?",
+        "expects": "two weeks"
     },
     {
-        "question": "How long are wait times at Kestrel Commons during lunch?",
-        "expects": "20 to 25 minutes",
+        "question": "Are the CS 210 midterms curved?",
+        "expects": "curved"
     },
     {
-        "question": "Does Innisfree Hall have air conditioning?",
-        "expects": "no air conditioning",
+        "question": "What time should students go to The Atrium to avoid a long wait?",
+        "expects": "11:45"
     },
     {
-        "question": "What are the walk-in hours at the health centre?",
-        "expects": "8am to 11am",
-    },
+        "question": "Does Calder Annexe have a building-wide noise problem?",
+        "expects": "no building-wide pattern"
+    }
 ]
 
 # Questions from a different world entirely. Your gate should refuse all five.

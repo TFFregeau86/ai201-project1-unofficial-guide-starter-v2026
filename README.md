@@ -1,267 +1,194 @@
-# The Unofficial Guide
+The Unofficial Guide
 
-<!-- Replace this line with your name and which corpus you picked. -->
+Name: T. Fregeau
+Corpus: campus_life
 
-> **This file is your submission.** Fill it in as you go — most sections get
-> written during the milestone that produces them, not at the end.
->
-> How the starter works, and every command you'll need, is in `RUNNING.md`.
-> Leave that file alone.
->
-> **Paste everything as text.** No screenshots, no video. A typed table gets
-> full credit; a picture of the same table gets none, because the grader can't
-> read it.
->
-> Delete these instruction blocks as you replace them. The `<!-- -->` comments
-> are notes to you and don't show up when the page renders — you can leave them
-> or remove them.
+Week 1
+What This Does
 
----
+The Unofficial Guide is a retrieval-based question-answering system built using the campus_life corpus. It searches short student posts about topics such as courses, housing, dining, campus services, and administrative policies. When a user asks a question, the system retrieves relevant chunks from the corpus and uses them to generate an answer grounded in those documents. It also names its sources and refuses to answer when the retrieved information is not relevant enough.
 
-# Week 1
+Chunking Strategy
 
-## What This Does
+Maximum chunk size: 400 characters
+Overlap: 0 characters
+Function: chunker.py::split_documents
 
-The Unofficial Guide is a retrieval-based question-answering system built using
-the `campus_life` corpus. It searches short student posts about topics such as
-courses, housing, dining, campus services, and administrative policies. When a
-user asks a question, the system retrieves relevant chunks from the corpus and
-uses them to generate an answer grounded in those documents. It also names its
-sources and refuses to answer when the retrieved information is not relevant
-enough.
+I chose a paragraph-based chunking strategy because the campus_life corpus contains short student posts where useful information is usually contained in a sentence or short paragraph. The starter used fixed-size character windows with overlap, which did not pay attention to paragraph boundaries and could split useful information in the middle of a thought.
 
-## Chunking Strategy
+My split_documents function separates each document into paragraphs and combines neighboring paragraphs as long as the combined text stays within the 400-character limit. This keeps related paragraphs together while avoiding arbitrary cuts in the middle of paragraphs. I used no overlap because the chunks are created at paragraph boundaries, and the documents are already short enough that repeating text between chunks was not necessary.
 
-**Chunk size:** 400 characters  
-**Overlap:** 0 characters
+After changing the chunker, the corpus produced 100 chunks from 88 documents, averaging 278 characters. The shortest chunk was 94 characters and the longest was 400 characters.
 
-I chose a paragraph-based chunking strategy because the `campus_life` corpus
-contains short posts where useful information is usually contained in a sentence
-or short paragraph. The starter used 800-character windows with 120 characters
-of overlap, which produced 88 chunks from 88 documents and therefore did not
-split most posts at all.
+Sample Chunks
+Chunk 1
 
-My `split_documents` function groups complete neighboring paragraphs while they
-fit within 400 characters. I used no overlap because the chunks are divided at
-paragraph boundaries instead of arbitrary character positions. With this
-strategy, the corpus produced 100 chunks averaging 278 characters, compared
-with the starter's 88 chunks averaging 317 characters.
+Source: admin_add_drop_deadline.txt#0
+Produced by: chunker.py::split_documents
 
-## Sample Chunks
-
-**Chunk 1** — source: `admin_add_drop_deadline.txt#0` — produced by: `chunker.py::split_documents`
-
-```
 On the add/drop deadline
 
 You can add a course through the end of the second week. Dropping is a longer window — through the end of week six — but a drop after week two shows as a W on your transcript. Nothing anywhere on the registrar's site says this plainly, and students find out from each other.
-```
 
-**Chunk 2** — source: `course_cs_210.txt#0` — produced by: `chunker.py::split_documents`
+Chunk 2
 
-```
+Source: course_cs_210.txt#0
+Produced by: chunker.py::split_documents
+
 CS 210 Data Structures
 
 I'm a junior and I've done this twice now. Format is lecture with weekly labs; slides go up after class, not before. Assessment: two midterms and a final, all drawn from lecture material rather than the textbook. Midterms are curved, the final is not.
 
 Expect 8 to 10 hours a week outside class.
-```
 
-**Chunk 3** — source: `course_math_220_workload.txt#0` — produced by: `chunker.py::split_documents`
+Chunk 3
 
-```
+Source: course_math_220_workload.txt#0
+Produced by: chunker.py::split_documents
+
 Workload for MATH 220 Linear Algebra
 
 People keep asking so: 6 to 8 hours a week, almost all of it on problem sets. That's real time, not optimistic time.
 
 It's front-loaded — the first month is heavier than the rest, partly because you're learning the format.
-```
 
-**Chunk 4** — source: `dining_the_ridgeway_cafe_followup.txt#0` — produced by: `chunker.py::split_documents`
+Chunk 4
 
-```
+Source: dining_the_ridgeway_cafe_followup.txt#0
+Produced by: chunker.py::split_documents
+
 Re: The Ridgeway Café
 
 Adding to what people have said about The Ridgeway Café. The wait figure of 10 to 15 minutes at 12:30 matches what I've seen. If you're trying to eat between classes, go before 11:45 and it's a different building entirely.
 
 Also worth saying: seating is tight; about 40 seats for a building of 900. Nobody tells you this at orientation.
-```
 
-**Chunk 5** — source: `housing_innisfree_hall.txt#1` — produced by: `chunker.py::split_documents`
+Chunk 5
 
-```
-Laundry costs $1.75 wash, $1.75 dry, app-based. On noise: moderate; the building is L-shaped and the short wing is much quieter.
-```
+Source: housing_morrow_house.txt#0
+Produced by: chunker.py::split_documents
 
-## Sample Answer
+Morrow House — what it's actually like
 
-**Question:** What are the walk-in hours at the health centre?
+Just finished a year in this building. Built 1954, partially renovated 2008. Rooms are singles and doubles, hall bathrooms.
 
-**Answer:**
+The good: cheapest housing tier by about $900 a year, and the singles are real singles.
 
-```
-The walk-in hours at the health centre are 8am to 11am (health_center.txt).
+The bad: known damp problem on the ground floor; two rooms were taken offline in 2024.
 
-Sources retrieved: dining_the_atrium.txt, dining_the_ridgeway_cafe_followup.txt, health_center.txt, transit_shuttle.txt, transit_walking.txt
-```
+Sample Answer
 
-**My relevance cutoff:** 0.6
+Question: What happens if I drop a course after week two?
 
-I kept the relevance cutoff at 0.6 after comparing the best retrieval distances
-for five questions covered by the corpus with five questions outside the corpus.
-The in-corpus questions ranged from 0.1680 to 0.3632, while the out-of-scope
-questions ranged from 0.8246 to 0.9340. This left a large gap between the two
-groups, and 0.6 falls comfortably inside that gap.
+Answer:
 
-| Question | In corpus? | Best distance |
-|---|---|---:|
-| Is the housing lottery completely random? | Yes | 0.2514 |
-| What material are the CS 210 exams based on? | Yes | 0.3002 |
-| How long are wait times at Kestrel Commons during lunch? | Yes | 0.1680 |
-| Does Innisfree Hall have air conditioning? | Yes | 0.3632 |
-| What are the walk-in hours at the health centre? | Yes | 0.2156 |
-| What is the capital of Mongolia? | No | 0.8246 |
-| How do I change the oil in a diesel engine? | No | 0.9340 |
-| Who won the 1994 World Cup? | No | 0.8859 |
-| What is the recommended dosage of ibuprofen for a headache? | No | 0.8442 |
-| How do I write a for loop in Rust? | No | 0.8907 |
+If you drop a course after week two, it shows as a W on your transcript (admin_add_drop_deadline.txt).
 
-## How I Used AI
+Sources retrieved: admin_add_drop_deadline.txt, admin_declaring_a_major.txt, admin_grade_appeals.txt, admin_pass_fail_option.txt, admin_withdrawal_deadline.txt
 
-**1.** I used ChatGPT to help me design a chunking strategy after examining the
-short documents in the `campus_life` corpus. It suggested grouping complete
-paragraphs up to a character limit instead of using the starter's fixed
-character windows. I used that approach with a 400-character limit and no
-overlap, then indexed the corpus and inspected the resulting chunks to make
-sure they contained complete thoughts.
+Source: admin_add_drop_deadline.txt
 
-**2.** I used ChatGPT to help interpret the retrieval distances from my five
-in-corpus questions and five out-of-scope questions. We compared the two
-groups and found that the in-corpus distances ranged from 0.1680 to 0.3632,
-while the out-of-scope distances ranged from 0.8246 to 0.9340. Based on that
-comparison, I kept the 0.6 relevance cutoff because it falls clearly between
-the two groups.
+Relevance Cutoff
 
-<!-- ── Stretch features ─────────────────────────────────────────────────────
-     Doing one? Say so here BEFORE you start. A feature this README never
-     claims earns nothing.
-     ───────────────────────────────────────────────────────────────────────── -->
+Relevance cutoff: 0.6
 
----
+I compared the best retrieval distances for my five in-corpus questions with the best distances for the five out-of-scope questions. The in-corpus questions had best distances between 0.2911 and 0.4610, while the out-of-scope questions had best distances between 0.8246 and 0.9340. There is a clear gap between the two groups, so the existing 0.6 cutoff falls between them.
 
-# Week 2
+Question	In corpus?	Best distance
+What happens if I drop a course after week two?	Yes	0.3445
+When should students book their adviser before registration?	Yes	0.4270
+Are the CS 210 midterms curved?	Yes	0.4608
+What time should students go to The Atrium to avoid a long wait?	Yes	0.2911
+Does Calder Annexe have a building-wide noise problem?	Yes	0.3541
+What is the capital of Mongolia?	No	0.8246
+How do I change the oil in a diesel engine?	No	0.9340
+Who won the 1994 World Cup?	No	0.8859
+What is the recommended dosage of ibuprofen for a headache?	No	0.8442
+How do I write a for loop in Rust?	No	0.8907
 
-<!-- These sections get ADDED to what's already above. Don't delete or rewrite
-     week 1 — the point is that someone can see what you said before you knew
-     how it went. -->
+The lowest out-of-scope distance was 0.8246, while the highest in-corpus distance was 0.4608. This leaves a gap of more than 0.36, so 0.6 provides a substantial margin between relevant and unrelated questions.
 
-## Run Log — Before
+How I Used AI
 
-<!-- Your five criteria, three runs each. `python run_eval.py --label before`
-     runs the questions, puts the OUT_OF_SCOPE ones through the gate, and
-     writes it all into results/ for you. Targets come from criteria.md; the
-     verdict column is your call.
+1. I used ChatGPT to help me understand how to approach the chunking strategy after examining the short campus_life documents. I considered a paragraph-based approach instead of blindly using fixed character windows. I then implemented and tested the strategy myself, using a 400-character maximum and no overlap, and inspected the chunks produced by my code.
 
-     Criterion 3 is measured in one deterministic pass rather than three, so
-     the same number goes in all three run columns. That's correct, not lazy.
+2. I used ChatGPT to help me check whether my acceptance criteria were specific enough to be tested. I kept the final criteria based on my own decisions about the corpus and changed the explanations so that each target had a reason connected to my documents or pipeline.
 
-     Milestone 1. -->
+Week 2
+Run Log — Before
 
-| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
-|---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+I ran python run_eval.py --label before before building scorer.py. The evaluation reported that no scorer was present, so criteria 1, 2, 4, and 5 were not automatically scored yet. The retrieval distances were recorded for all five in-corpus questions, and the relevance gate was evaluated for all five out-of-scope questions.
 
-<!-- Underneath, paste the REAL output for each criterion from one of your
-     runs — the actual text your system produced, not a description of it.
-     Name the file and function that produced it. -->
+Criterion	Target	Run 1	Run 2	Run 3	Verdict
+1. Retrieved chunk contains the answer	4 of 5	Not scored	Not scored	Not scored	Pending scorer
+2. Every answer names a source	5 of 5	Not scored	Not scored	Not scored	Pending scorer
+3. Gate stops out-of-corpus questions	4 of 5	5 of 5	5 of 5	5 of 5	MET
+4. Chunks contain complete thoughts	4 of 5	Not scored	Not scored	Not scored	Pending scorer
+5. Answers contain expected information	4 of 5	Not scored	Not scored	Not scored	Pending scorer
+Criterion 3 evidence
 
-## Verdicts
+The five out-of-scope questions were all rejected by the relevance gate:
 
-<!-- MET or MISSED for each of the five, against the target you wrote last
-     week — not a new one. Plus a sentence on how you decided. That sentence
-     matters most where it was close.
+Question	Best distance	Result
+What is the capital of Mongolia?	0.8246	Refused
+How do I change the oil in a diesel engine?	0.9340	Refused
+Who won the 1994 World Cup?	0.8859	Refused
+What is the recommended dosage of ibuprofen for a headache?	0.8442	Refused
+How do I write a for loop in Rust?	0.8907	Refused
 
-     If your target said 4 of 5 and your runs came out 4, 3, 4, that's a MISS.
-     The target has to hold, not show up occasionally.
+The gate therefore refused 5 of 5 out-of-scope questions, exceeding the target of 4 of 5.
 
-     Milestone 2. -->
+Run file: results/run_2026-09-14_2250_before.md
 
-| # | Criterion | Verdict | How I decided |
-|---|---|---|---|
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+Command used: python run_eval.py --label before
 
-## Diagnoses
+Verdicts
+#	Criterion	Verdict	How I decided
+1	Retrieved chunk contains the answer	Pending	The unscored evaluation recorded retrieval distances but did not yet determine whether the retrieved chunks contained the complete answer.
+2	Every answer names a source	Pending	scorer.py was not present, so this criterion was not automatically scored in the before run.
+3	Gate stops out-of-corpus questions	MET	The gate refused all 5 out-of-scope questions, which is better than the target of 4 of 5.
+4	Chunks contain complete thoughts	Pending	This requires inspecting the sampled chunks against the criterion; the unscored evaluation did not provide a numerical verdict.
+5	Answers contain expected information	Pending	The evaluation did not yet have a scorer to compare answers with the expects phrases.
+Diagnoses
 
-<!-- For each miss: which stage caused it, and how. The stage alone isn't
-     enough — you need the mechanism.
+The before evaluation shows one clear result: the relevance gate is working well for the five out-of-scope questions. All five had distances above the 0.6 cutoff and were refused.
 
-     Not a diagnosis: "Question 3 didn't work."
-     A diagnosis:     "Question 3 asks about laundry costs. The answer is in
-                       one sentence that got split across two chunks, so
-                       neither chunk on its own contains it."
+The remaining four criteria cannot be honestly diagnosed from the unscored run alone. Their measurements require the Week 2 scorer and inspection of the retrieved chunks and generated answers. I will use those results to determine whether any failures come from loading, chunking, embedding, retrieval, or generation.
 
-     The five stages: loading → chunking → embedding → retrieval → generation.
+The current chunking strategy itself produced 100 chunks from 88 documents and keeps paragraphs intact, so one thing I will check is whether any answer is spread across multiple chunks or whether the retrieval ranking places the answer-containing chunk below the top result.
 
-     Look for a pattern. If three misses all ask about numbers, that's one
-     problem, not three.
+The Improvement
 
-     Missed nothing? Say so, then say honestly whether your targets were set
-     low, and which one you'd tighten and to what.
+What I changed:
 
-     Milestone 3. -->
+I changed the starter's fixed-size character-window chunker to chunker.py::split_documents, which groups complete paragraphs up to 400 characters with no overlap.
 
-## The Improvement
+Why I picked it:
 
-**What I changed:**
+The starter chunker could split text at arbitrary character positions. The campus_life corpus consists mostly of short posts and paragraphs, so preserving paragraph boundaries should make each retrieved chunk more self-contained and easier for the model to use.
 
-**Why I picked it:**
+Run Log — After
 
-<!-- Connect it to a specific diagnosis above in one sentence. If you can't,
-     you picked a fix because it sounded impressive. -->
+This section will be completed after the Week 2 improvement run and scorer results are available.
 
-### Run Log — After
+Criterion	Target	Run 1	Run 2	Run 3	Verdict
+1. Retrieved chunk contains the answer	4 of 5	Pending	Pending	Pending	Pending
+2. Every answer names a source	5 of 5	Pending	Pending	Pending	Pending
+3. Gate stops out-of-corpus questions	4 of 5	Pending	Pending	Pending	Pending
+4. Chunks contain complete thoughts	4 of 5	Pending	Pending	Pending	Pending
+5. Answers contain expected information	4 of 5	Pending	Pending	Pending	Pending
+Did It Help?
 
-<!-- Same format, same five criteria, three runs each.
-     `python run_eval.py --label after` -->
+The chunking change produced 100 chunks instead of the starter's 88 chunks and kept the sampled chunks as complete paragraphs. However, I will use the Week 2 before/after evaluation results to determine whether this structural improvement actually improved retrieval or answer quality.
 
-| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
-|---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+What's Still Broken
 
-**Did it help?**
+At this point, the only criterion with a completed measurement is criterion 3, and it is met at 5 of 5.
 
-<!-- Say plainly whether it did, and how you know. If it made things worse,
-     say that — a change that backfired, honestly reported, earns full credit
-     and is more interesting than one that worked. What matters is that you can
-     tell.
+Criteria 1, 2, 4, and 5 still need their scorer-based measurements before I can identify which ones remain broken. I will not lower their original targets based on missing results.
 
-     Milestone 4. -->
+What I'd Do Differently
 
-## What's Still Broken
+I would keep the original targets because they were specific and measurable before seeing the results. The main thing I would improve is the measurement plan: I would make sure the scorer is available before running the full Week 2 evaluation so that retrieval, source attribution, chunk completeness, and expected-answer content can all be measured consistently across the before and after runs.
 
-<!-- For each criterion still missed after your fix: what you'd do about it,
-     and why you stopped where you did.
-
-     "I ran out of time" is fine if it's true. Pretending nothing is left is
-     not.
-
-     Milestone 5. -->
-
-## What I'd Do Differently
-
-<!-- Knowing what you know now — which of your five criteria would you write
-     differently, and why?
-
-     Milestone 5. -->
+The relevance-gate criterion was particularly useful because it produced a direct measurement: all five clearly unrelated questions were rejected, and their distances were substantially higher than the in-corpus questions. That supports the original decision to use a 0.6 cutoff.

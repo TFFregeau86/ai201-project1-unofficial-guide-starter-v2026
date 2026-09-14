@@ -60,22 +60,49 @@ def fallback_split(
         raise ValueError("overlap has to be smaller than chunk_size")
 
     chunks: list[Chunk] = []
+
+    chunk_size = 400
+    overlap = 50
+
     for doc in documents:
-        start = 0
+        paragraphs = [
+            paragraph.strip()
+            for paragraph in doc.text.split("\n\n")
+            if paragraph.strip()
+        ]
+
+        current = ""
         index = 0
-        while start < len(doc.text):
-            piece = doc.text[start : start + chunk_size].strip()
-            if piece:
+
+        for paragraph in paragraphs:
+            combined = f"{current}\n\n{paragraph}" if current else paragraph
+
+            if current and len(combined) > chunk_size:
                 chunks.append(
                     Chunk(
-                        text=piece,
+                        text=current,
                         source=doc.source,
                         index=index,
-                        produced_by="chunker.py::fallback_split",
+                        produced_by="chunker.py::split_documents",
                     )
                 )
                 index += 1
-            start += chunk_size - overlap
+
+                # Keep a small amount of context from the previous chunk.
+                overlap_text = current[-overlap:].strip()
+                current = f"{overlap_text}\n\n{paragraph}" if overlap_text else paragraph
+            else:
+                current = combined
+
+        if current:
+            chunks.append(
+                Chunk(
+                    text=current,
+                    source=doc.source,
+                    index=index,
+                    produced_by="chunker.py::split_documents",
+                )
+            )
 
     return chunks
 

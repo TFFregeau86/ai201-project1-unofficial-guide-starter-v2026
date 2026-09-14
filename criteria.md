@@ -62,8 +62,7 @@ the distance results in Milestone 4 to choose the cutoff.
 
 ## 4. Chunks contain complete thoughts
 
-At least 4 of 5 sampled chunks should contain a complete thought without
-cutting a sentence in half at the beginning or end.
+At least 4 of 5 sampled chunks should be between 150 and 500 characters and contain a complete thought without cutting a sentence in half.
 
 **Why this target:**
 The campus life documents are short and their useful information is usually
